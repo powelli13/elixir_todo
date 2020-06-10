@@ -40,8 +40,8 @@ defmodule Todo.Server do
     Method used to load the Todo list for this server
     from disk based on the name, if it exists.
     This is handled using a message passed to the process
-    so that the caller, Todo.Cache, does not block
-    when creating new Todo.Server processes.
+    so that the caller does not block when creating new 
+    Todo.Server processes.
     """
     def handle_info(:real_init, name) do
         {:noreply, {name, Todo.Database.get(name) || Todo.List.new()}}
