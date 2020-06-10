@@ -22,3 +22,5 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 todo_cache-*.tar
 
+# Ignore the Todo lists stored on disk
+/persist/
