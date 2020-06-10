@@ -2,7 +2,6 @@ defmodule Todo.DatabaseWorker do
     use GenServer
 
     def start(folder) do
-        IO.inspect(folder)
         GenServer.start(Todo.DatabaseWorker, folder)
     end
 
@@ -27,9 +26,10 @@ defmodule Todo.DatabaseWorker do
 
     @impl GenServer
     def handle_cast({:store, key, data}, folder) do
+        IO.inspect "#{self()}: storing #{key}"
+
         key
         |> file_name(folder)
-        |> IO.inspect
         |> File.write!(:erlang.term_to_binary(data))
         
         {:noreply, folder}
@@ -38,6 +38,8 @@ defmodule Todo.DatabaseWorker do
     # TODO may need to use caller here?
     @impl GenServer
     def handle_call({:get, key}, _, folder) do
+        IO.inspect "#{self()}: retrieving #{key}"
+
         data = case File.read(file_name(key, folder)) do
             {:ok, contents} -> :erlang.binary_to_term(contents)
             _ -> nil

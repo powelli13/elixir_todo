@@ -24,29 +24,38 @@ defmodule Todo.Database do
     @impl GenServer
     def init(_) do
         File.mkdir_p!(@db_folder)
-        {:ok, nil}
+        workers = %{
+            0 => Todo.DatabaseWorker.start(@db_folder),
+            1 => Todo.DatabaseWorker.start(@db_folder),
+            2 => Todo.DatabaseWorker.start(@db_folder)
+        }
+
+        {:ok, workers}
     end
 
-    @impl GenServer
-    def handle_cast({:store, key, data}, state) do
-        key
-        |> file_name()
-        |> File.write!(:erlang.term_to_binary(data))
-        
-        {:noreply, state}
-    end
+    defp choose_worker(workers, file_name) do
+        key = :erlang.phash2(file_name, 3)
 
-    @impl GenServer
-    def handle_call({:get, key}, _, state) do
-        data = case File.read(file_name(key)) do
-            {:ok, contents} -> :erlang.binary_to_term(contents)
-            _ -> nil
+        case Map.fetch(workers, key) do
+            {:ok, worker} -> worker
+            :error -> raise "Invalid key: #{file_name}"
         end
-
-        {:reply, data, state}
     end
 
-    defp file_name(key) do
-        Path.join(@db_folder, to_string(key))
+    @impl GenServer
+    def handle_cast({:store, key, data}, workers) do
+        worker = choose_worker(workers, key)
+        Todo.DatabaseWorker.store(worker, key, data)
+
+        {:noreply, workers}
+    end
+
+    @impl GenServer
+    def handle_call({:get, key}, _, workers) do
+        worker = choose_worker(workers, key)
+        {:ok, data} = Todo.DatabaseWorker.get(worker, key)
+
+        #TODO may need to give caller to workers to reply
+        {:reply, data, workers}
     end
 end
