@@ -14,11 +14,15 @@ defmodule Todo.Database do
     end
 
     def store(key, data) do
-        GenServer.cast(__MODULE__, {:store, key, data})
+        key
+        |> choose_worker()
+        |> Todo.DatabaseWorker.store(key, data)
     end
 
     def get(key) do
-        GenServer.call(__MODULE__, {:get, key})
+        key
+        |> choose_worker()
+        |> Todo.DatabaseWorker.get(key)
     end
 
     @impl GenServer
@@ -37,28 +41,19 @@ defmodule Todo.Database do
         {:ok, workers}
     end
 
-    defp choose_worker(workers, file_name) do
+    defp choose_worker(file_name) do
+        GenServer.call(__MODULE__, {:choose_worker, file_name})
+    end
+
+    @impl GenServer
+    def handle_call({:choose_worker, file_name}, _, workers) do
         key = :erlang.phash2(file_name, 3)
 
-        case Map.fetch(workers, key) do
+        worker = case Map.fetch(workers, key) do
             {:ok, worker} -> worker
             :error -> raise "Invalid key: #{file_name}"
         end
-    end
 
-    @impl GenServer
-    def handle_cast({:store, key, data}, workers) do
-        choose_worker(workers, key)
-        |> Todo.DatabaseWorker.store(key, data)
-
-        {:noreply, workers}
-    end
-
-    @impl GenServer
-    def handle_call({:get, key}, _, workers) do
-        data = choose_worker(workers, key)
-        |> Todo.DatabaseWorker.get(key)
-        
-        {:reply, data, workers}
+        {:reply, worker, workers}
     end
 end

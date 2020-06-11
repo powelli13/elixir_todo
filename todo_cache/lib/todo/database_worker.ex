@@ -33,13 +33,13 @@ defmodule Todo.DatabaseWorker do
         {:noreply, folder}
     end
 
-    # TODO may need to use caller here?
     @impl GenServer
     def handle_call({:get, key}, _, folder) do
-        data = case File.read(file_name(key, folder)) do
-            {:ok, contents} -> :erlang.binary_to_term(contents)
-            _ -> nil
-        end
+        data = 
+            case File.read(file_name(key, folder)) do
+                {:ok, contents} -> :erlang.binary_to_term(contents)
+                _ -> nil
+            end
         
         {:reply, data, folder}
     end
