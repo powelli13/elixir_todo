@@ -8,8 +8,10 @@ defmodule Todo.Server do
     """
 
     # interface functions
-    def start(name) do
-        GenServer.start(Todo.Server, name)
+    def start_link(name) do
+        IO.puts("Starting Todo server process for list: #{name}")
+
+        GenServer.start_link(Todo.Server, name)
     end
 
     def entries(todo_server, date) do
