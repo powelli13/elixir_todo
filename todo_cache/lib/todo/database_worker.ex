@@ -1,24 +1,36 @@
 defmodule Todo.DatabaseWorker do
     use GenServer
+    @moduledoc """
+    Persists Todo lists to disk using keys
+    as the file name.
+    """
 
-    def start_link(folder) do
-        IO.puts("Starting database worker process for folder: #{folder}")
+    def start_link({folder, worker_id}) do
+        IO.puts("Starting database worker #{worker_id}")
 
-        GenServer.start_link(Todo.DatabaseWorker, folder)
+        GenServer.start_link(
+            __MODULE__,
+            folder,
+            name: via_tuple(worker_id)
+        )
     end
 
-    def get(worker, key) do
+    def get(worker_id, key) do
         GenServer.call(
-            worker,
+            via_tuple(worker_id),
             {:get, key}
         )
     end
 
-    def store(worker, key, data) do
+    def store(worker_id, key, data) do
         GenServer.cast(
-            worker,
+            via_tuple(worker_id),
             {:store, key, data}
         )
+    end
+
+    defp via_tuple(worker_id) do
+        Todo.ProcessRegistry.via_tuple({__MODULE__, worker_id})
     end
 
     @impl GenServer

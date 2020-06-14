@@ -1,18 +1,32 @@
 defmodule Todo.Database do
-    use GenServer
     @moduledoc """
-    Persists Todo lists to disk using keys
-    as the file name.
+    Supervisor for the Todo.DatabaseWorker
+    processes.
     """
 
+    @pool_size 3
     @db_folder "./persist"
 
     def start_link do
-        IO.puts("Starting database process")
+        IO.puts("Starting database supervisor.")
+        File.mkdir_p!(@db_folder)
 
-        GenServer.start_link(__MODULE__, nil,
-            name: __MODULE__
-        )
+        children = Enum.map(1..@pool_size, &worker_spec/1)
+
+        Supervisor.start_link(children, strategy: :one_for_one)
+    end
+
+    def child_spec(_) do
+        %{
+            id: __MODULE__,
+            start: {__MODULE__, :start_link, []},
+            type: :supervisor
+        }
+    end
+
+    defp worker_spec(worker_id) do
+        default_worker_spec = {Todo.DatabaseWorker, {@db_folder, worker_id}}
+        Supervisor.child_spec(default_worker_spec, id: worker_id)
     end
 
     def store(key, data) do
@@ -27,35 +41,7 @@ defmodule Todo.Database do
         |> Todo.DatabaseWorker.get(key)
     end
 
-    @impl GenServer
-    def init(_) do
-        File.mkdir_p!(@db_folder)
-        {:ok, worker_one} = Todo.DatabaseWorker.start_link(@db_folder)
-        {:ok, worker_two} = Todo.DatabaseWorker.start_link(@db_folder)
-        {:ok, worker_three} = Todo.DatabaseWorker.start_link(@db_folder)
-
-        workers = %{
-            0 => worker_one,
-            1 => worker_two,
-            2 => worker_three
-        }
-
-        {:ok, workers}
-    end
-
-    defp choose_worker(file_name) do
-        GenServer.call(__MODULE__, {:choose_worker, file_name})
-    end
-
-    @impl GenServer
-    def handle_call({:choose_worker, file_name}, _, workers) do
-        key = :erlang.phash2(file_name, 3)
-
-        worker = case Map.fetch(workers, key) do
-            {:ok, worker} -> worker
-            :error -> raise "Invalid key: #{file_name}"
-        end
-
-        {:reply, worker, workers}
+    defp choose_worker(key) do
+        :erlang.phash2(key, @pool_size) + 1
     end
 end
