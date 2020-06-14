@@ -52,7 +52,7 @@ defmodule Todo.DatabaseWorker do
         data = 
             case File.read(file_name(key, folder)) do
                 {:ok, contents} -> :erlang.binary_to_term(contents)
-                _ -> nil
+                {:error, :enoent} -> nil
             end
         
         {:reply, data, folder}

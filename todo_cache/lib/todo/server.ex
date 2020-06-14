@@ -1,5 +1,5 @@
 defmodule Todo.Server do
-    use GenServer
+    use GenServer, restart: :temporary
     @moduledoc """
     A server process that stores the state of
     a single Todo.List and has functionality for
@@ -11,7 +11,11 @@ defmodule Todo.Server do
     def start_link(name) do
         IO.puts("Starting Todo server process for list: #{name}")
 
-        GenServer.start_link(Todo.Server, name)
+        GenServer.start_link(Todo.Server, name, name: via_tuple(name))
+    end
+
+    defp via_tuple(name) do
+        Todo.ProcessRegistry.via_tuple({__MODULE__, name})
     end
 
     def entries(todo_server, date) do
