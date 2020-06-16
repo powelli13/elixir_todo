@@ -13,6 +13,7 @@ defmodule Todo.System do
     def init(_) do
         Supervisor.init(
             [
+                Todo.Metrics,
                 Todo.ProcessRegistry,
                 Todo.Database,
                 Todo.Cache
