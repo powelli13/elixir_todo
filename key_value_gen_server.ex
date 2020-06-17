@@ -2,8 +2,8 @@ defmodule KeyValueStore do
     use GenServer
 
     # interface functions
-    def start do
-        GenServer.start(KeyValueStore, nil, name: __MODULE__)
+    def start_link do
+        GenServer.start_link(__MODULE__, nil, name: __MODULE__)
     end
 
     def put(key, value) do
