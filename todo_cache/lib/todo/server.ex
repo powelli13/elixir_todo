@@ -6,6 +6,8 @@ defmodule Todo.Server do
     adding, updating, deleting and retrieving
     Todo entries.
     """
+    
+    @expiry_idle_timeout :timer.minutes(2)
 
     # interface functions
     def start_link(name) do
@@ -38,7 +40,7 @@ defmodule Todo.Server do
     @impl GenServer
     def init(name) do
         send(self(), :real_init)
-        {:ok, name}
+        {:ok, name, @expiry_idle_timeout}
     end
 
     @impl GenServer
@@ -50,28 +52,51 @@ defmodule Todo.Server do
     Todo.Server processes.
     """
     def handle_info(:real_init, name) do
-        {:noreply, {name, Todo.Database.get(name) || Todo.List.new()}}
+        {
+            :noreply,
+            {name, Todo.Database.get(name) || Todo.List.new()},
+            @expiry_idle_timeout
+        }
+    end
+
+    @impl GenServer
+    def handle_info(:timeout, {name, todo_list}) do
+        IO.puts("Stopping todo server for #{name} due to timeout")
+        {:stop, :normal, {name, todo_list}}
     end
 
     @impl GenServer
     def handle_call({:entries, date}, _, {name, state}) do
-        {:reply, Todo.List.entries(state, date), {name, state}}
+        {
+            :reply,
+            Todo.List.entries(state, date),
+            {name, state},
+            @expiry_idle_timeout
+        }
     end
 
     @impl GenServer
     def handle_cast({:add_entry, new_entry}, {name, state}) do
         new_list = Todo.List.add_entry(state, new_entry)
         Todo.Database.store(name, new_list)
-        {:noreply, {name, new_list}}
+        {:noreply, {name, new_list}, @expiry_idle_timeout}
     end
 
     @impl GenServer
     def handle_cast({:update_entry, id, updater}, {name, state}) do
-        {:noreply, {name, Todo.List.update_entry(state, id, updater)}}
+        {
+            :noreply, 
+            {name, Todo.List.update_entry(state, id, updater)},
+            @expiry_idle_timeout
+        }
     end
 
     @impl GenServer
     def handle_cast({:delete_entry, id}, {name, state}) do
-        {:noreply, {name, Todo.List.delete_entry(state, id)}}
+        {
+            :noreply,
+            {name, Todo.List.delete_entry(state, id)},
+            @expiry_idle_timeout
+        }
     end
 end
