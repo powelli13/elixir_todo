@@ -47,10 +47,9 @@ defmodule SimpleRegistryMap do
 
     @impl GenServer
     def handle_call({:register, name}, {caller_pid, _}, map) do
-        Process.link(caller_pid)
-
         {response, new_map} = case Map.get(map, name) do
             nil ->
+                Process.link(caller_pid)
                 {:ok, Map.put(map, name, caller_pid)}
             _ ->
                 {:error, map}
