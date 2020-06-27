@@ -14,7 +14,7 @@ defmodule Todo.Server do
         IO.puts("Starting Todo server process for list: #{name}")
 
         GenServer.start_link(Todo.Server, name, name: global_name(name))
-    ends
+    end
 
     defp global_name(name) do
         {:global, {__MODULE__, name}}
