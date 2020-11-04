@@ -24,18 +24,30 @@ Examples:
 ```
 # My first comment
 40 + 2
+> 42
 2 * 3
+> 6
 10 / 2 # division operator always returns float
+> 5.0
 10 / 2 == 5
+> true
 10 / 2 === 5 # triple equals requires both to be int or float
+> false
 IO.puts("hello world")
+>hello world
+>:ok
 "hello" <> "world"
-# "An atom is a constant whose value is its own name. Some other languages call these symbols. They are often useful to enumerate over distinct values"
+>"helloworld"
+# "An atom is a constant whose value is its own name. Some other languages call these symbols.
+# They are often useful to enumerate over distinct values"
 :atom
 # true, false and nil are simply atoms
 true == :true
+>true
 is_atom(:alpha)
+>true
 is_atom(false)
+>true
 ```
 
 ### Lists
@@ -46,15 +58,21 @@ _The `/2` denotes the 'arity' or number of parameters an Elixir function takes._
 ```
 [1, 2, true, 3]
 length [1, 2, 3] # you can omit parens on function calls
+>3
 ["hello"] ++ ["world"]
+>["hello", "world"]
 [1, true, 2, false, 3, true] -- [true, false]
+>[1, 2, 3, true]
 [1, true, 2, false, 3, true] -- [1, 2, 3]
+>[true, false, true]
 ```
-The functions `hd/1` and `tl/1` can grab the head (first element) and tail (second element) of a list.
+The functions `hd/1` and `tl/1` can grab the head (first element) and tail (remaining list) of a list.
 ```
 list = [1, 2, 3]
 hd(list)
+>1
 tl(list)
+>[2, 3]
 ```
 
 ### Immutable Data
@@ -63,11 +81,11 @@ tl(list)
 ```
 list = [1, 2]
 list ++ [3]
-list
+>[1, 2, 3]
 List.delete(list, 1)
-list
+>[2]
 List.insert_at(list, 2, 3)
-l
+>[1, 2, 3]
 ```
 Putting the data structure as the first parameter is very common allows for methods to chain with the `|>` pipe operator. The pipe operator passes the result of the left side into the right side as the first argument.
 ```
@@ -77,25 +95,33 @@ list = List.insert_at(list, 0, 1) |>
   List.insert_at(0, 3) |>
   List.insert_at(0, 4) |>
   List.insert_at(0, 5)
+>[5, 4, 3, 2, 1]
 ```
 ### Maps
 > Whenever you need a key-value store, maps are the “go to” data structure in Elixir. A map is created using the %{} syntax
 ```
 is_map(%{})
+>true
 is_map(%{"hello" => "world"})
+>true
 map = %{"hello" => "world"}
 map["hello"]
-"world"
+>"world"
 # if atoms are the key then you can use . notation
 map = %{:alpha => "first", :beta => "second"} 
 map.alpha
+>"first"
 map.beta
+>"second"
 
 # remember that data is immutable
 Map.put(map, :gamma, "third") 
-map
+>%{alpha: "first", beta: "second", gamma: "third"}
+map # unchanged
+>%{alpha: "first", beta: "second"}
 modded_map = Map.put(map, :gamma, "third")
-modded_map
+modded_map # modified
+>%{alpha: "first", beta: "second", gamma: "third"}
 
 # You can arbitrarily nest data structures
 complex_map = %{
@@ -118,6 +144,7 @@ case 5 do
   _ ->
     "catch all if above didn't match"
 end
+>"matched!"
 
 # you can use guard clauses
 case {1, 2, 3} do
@@ -126,6 +153,7 @@ case {1, 2, 3} do
   _ ->
     "Would match, if guard condition were not satisfied"
 end
+>"Will match"
 ```
 Notice how the guard returns the result of the matched block? You can assign this with `=`.
 
@@ -139,13 +167,14 @@ cond do
   1 + 1 == 2 ->
     "But this will"
 end
+>"But this will"
 ```
 Note `cond` considers any values aside from `nil` and `false` to be `true`.
 
 `if` is just what you'd expect.
 
 ## Modules and Functions
-In Elixir functions are grabbed together in modules. `defmodule` is used to write a module, and `def` or `defp` to write a function. (`defp` is private). The last statement of the function, or executing clause, is the 'return' value for that function.
+In Elixir functions are grouped together in modules. `defmodule` is used to write a module, and `def` or `defp` to write a function. (`defp` is private). The last statement of the function, or executing clause, is the 'return' value for that function.
 
 ```
 defmodule Math do
@@ -156,13 +185,15 @@ end
 ```
 
 ### Anonymous Functions
->Elixir also provides anonymous functions. Anonymous functions allow us to store and pass executable code around as if it was an integer or a string. They are delimited by the keywords fn and end.
+>Elixir also provides anonymous functions. Anonymous functions allow us to store and pass executable code around as if it was an integer or a string. They are delimited by the keywords `fn` and `end`.
 
 ```
 add = fn a, b -> a + b end
 # . is used between function name and parens to indicate that it is anonymous
 add.(1, 2)
+>3
 is_function(add)
+>true
 ```
 
 ### Tail Call Recursion
@@ -178,6 +209,12 @@ defmodule Looper do
     count(i - 1)
   end
 end
+
+Looper.count(2)
+>2 let's keep counting down.
+>1 let's keep counting down.
+>0. That's it, all done counting!
+>:ok
 ```
 
 ## Processes in BEAM VM
